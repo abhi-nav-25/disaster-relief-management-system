@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,24 +8,39 @@ datasource db {
 
 enum UserRole {
   CITIZEN
-  ADMIN
+  RELIEF_CAMP_MANAGER
+  CONTROL_CENTRE_OPERATOR
+  DMA_SUPERVISOR
   RELIEF_TEAM
-  RELIEF_COORDINATOR
 }
 
-enum RequestType {
-  FOOD
-  WATER
-  MEDICINE
-  SHELTER
+enum CampOperationalStatus {
+  OPERATIONAL
+  LIMITED
+  FULL
+  TEMPORARILY_CLOSED
+  CLOSED
 }
 
-enum RequestStatus {
+enum RequestChannel {
+  ONLINE
+  PHONE
+  SMS
+}
+
+enum RequestVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ResourceRequestStatus {
   PENDING
   ASSIGNED
   IN_PROGRESS
-  COMPLETED
-  REJECTED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  CANCELLED
 }
 
 enum Priority {
@@ -40,18 +50,61 @@ enum Priority {
   CRITICAL
 }
 
-enum VulnerableGroup {
-  NONE
-  CHILDREN
-  WOMEN
-  ELDERLY
-  DISABLED
-}
-
 enum TeamStatus {
   AVAILABLE
   BUSY
   OFFLINE
+}
+
+enum TaskType {
+  RESCUE
+  EVACUATION
+  MEDICAL_ASSISTANCE
+  RESOURCE_DELIVERY
+}
+
+enum TaskStatus {
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum InventoryTransactionType {
+  RECEIPT
+  DELIVERY
+  CONSUMPTION
+  ADJUSTMENT
+}
+
+enum DuplicateDecision {
+  PENDING
+  CONFIRMED_DUPLICATE
+  NOT_DUPLICATE
+  DISMISSED
+}
+
+enum DeliveryStatus {
+  PLANNED
+  IN_TRANSIT
+  DELIVERED
+  PARTIALLY_DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VERIFY
+  REJECT
+  ASSIGN
+  OVERRIDE
+  STATUS_CHANGE
+  DUPLICATE_DECISION
 }
 
 model User {
@@ -60,44 +113,420 @@ model User {
   email    String   @unique
   password String
   phone    String?
-  role     UserRole @default(CITIZEN)
+  role     UserRole
 
-  requests  ReliefRequest[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  managedCampId Int?
+  managedCamp   ReliefCamp? @relation("CampManagers", fields: [managedCampId], references: [id], onDelete: SetNull)
+
+  teamMemberships ReliefTeamMember[]
+
+  submittedRequests ResourceRequest[] @relation("RequestCreatedBy")
+  verifiedRequests  ResourceRequest[] @relation("RequestVerifiedBy")
+
+  requestAssignments ResourceRequestAssignment[] @relation("RequestAssignedBy")
+
+  duplicateChecksReviewed RequestDuplicateCheck[] @relation("DuplicateReviewedBy")
+
+  assignedTasks Task[]       @relation("TaskAssignedBy")
+  taskUpdates   TaskUpdate[] @relation("TaskUpdatedBy")
+
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([managedCampId])
+}
+
+model ReliefCamp {
+  id Int @id @default(autoincrement())
+
+  // Official/master data
+  officialCode String @unique
+  name         String
+  address      String
+  latitude     Float
+  longitude    Float
+  capacity     Int
+
+  // Operational data
+  operationalStatus CampOperationalStatus @default(OPERATIONAL)
+  currentOccupancy  Int                   @default(0)
+  operationalNotes  String?
+
+  managers User[] @relation("CampManagers")
+
+  inventory CampInventory[]
+
+  inventoryTransactions InventoryTransaction[]
+
+  resourceRequests ResourceRequest[]
+
+  deliveries ResourceDelivery[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([operationalStatus])
 }
 
 model ReliefTeam {
   id            Int        @id @default(autoincrement())
   teamName      String
-  leaderName    String
   contactNumber String
   status        TeamStatus @default(AVAILABLE)
 
-  assignedRequests ReliefRequest[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-}
+  members ReliefTeamMember[]
 
-model ReliefRequest {
-  id              Int             @id @default(autoincrement())
-  requestType     RequestType
-  description     String
-  address         String
-  latitude        Float?
-  longitude       Float?
-  peopleAffected  Int
-  contactNumber   String
-  imageUrl        String?
-  vulnerableGroup VulnerableGroup @default(NONE)
-  priority        Priority        @default(MEDIUM)
-  status          RequestStatus   @default(PENDING)
+  requestAssignments ResourceRequestAssignment[]
 
-  createdById    Int
-  createdBy      User        @relation(fields: [createdById], references: [id])
-  assignedTeamId Int?
-  assignedTeam   ReliefTeam? @relation(fields: [assignedTeamId], references: [id])
+  tasks Task[]
+
+  deliveries ResourceDelivery[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ReliefTeamMember {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  teamId Int
+  team   ReliefTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+}
+
+model Resource {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  unit        String
+  isActive    Boolean @default(true)
+
+  inventoryItems CampInventory[]
+
+  requestItems ResourceRequestItem[]
+
+  deliveryItems ResourceDeliveryItem[]
+
+  inventoryTransactions InventoryTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name])
+}
+
+model CampInventory {
+  id Int @id @default(autoincrement())
+
+  campId Int
+  camp   ReliefCamp @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  quantity Decimal @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([campId, resourceId])
+  @@index([resourceId])
+}
+
+model InventoryTransaction {
+  id Int @id @default(autoincrement())
+
+  campId Int
+  camp   ReliefCamp @relation(fields: [campId], references: [id], onDelete: Restrict)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  type     InventoryTransactionType
+  quantity Decimal
+
+  referenceType String?
+  referenceId   Int?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([campId, resourceId])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+}
+
+model ResourceRequest {
+  id Int @id @default(autoincrement())
+
+  campId Int
+  camp   ReliefCamp @relation(fields: [campId], references: [id], onDelete: Restrict)
+
+  // For online requests this is the Camp Manager.
+  // For phone/SMS requests this is the Control Centre Operator
+  // who digitizes the request.
+  createdById Int?
+  createdBy   User? @relation("RequestCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  channel RequestChannel
+
+  description String?
+
+  verificationStatus RequestVerificationStatus @default(PENDING)
+
+  verifiedById Int?
+  verifiedBy   User? @relation("RequestVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  verifiedAt DateTime?
+
+  priority Priority @default(MEDIUM)
+
+  status ResourceRequestStatus @default(PENDING)
+
+  items ResourceRequestItem[]
+
+  assignments ResourceRequestAssignment[]
+
+  duplicateChecksAsOriginal RequestDuplicateCheck[] @relation("OriginalRequest")
+
+  duplicateChecksAsPossibleDuplicate RequestDuplicateCheck[] @relation("PossibleDuplicate")
+
+  deliveries ResourceDelivery[]
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campId])
+  @@index([status])
+  @@index([priority])
+  @@index([verificationStatus])
+  @@index([createdAt])
+}
+
+model ResourceRequestItem {
+  id Int @id @default(autoincrement())
+
+  requestId Int
+  request   ResourceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  quantity Decimal
+
+  notes String?
+
+  @@unique([requestId, resourceId])
+  @@index([resourceId])
+}
+
+model ResourceRequestAssignment {
+  id Int @id @default(autoincrement())
+
+  requestId Int
+  request   ResourceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  teamId Int
+  team   ReliefTeam @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  assignedById Int
+  assignedBy   User @relation("RequestAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+
+  notes String?
+
+  @@index([requestId])
+  @@index([teamId])
+}
+
+model RequestDuplicateCheck {
+  id Int @id @default(autoincrement())
+
+  originalRequestId Int
+  originalRequest   ResourceRequest @relation("OriginalRequest", fields: [originalRequestId], references: [id], onDelete: Cascade)
+
+  possibleDuplicateRequestId Int
+  possibleDuplicateRequest   ResourceRequest @relation("PossibleDuplicate", fields: [possibleDuplicateRequestId], references: [id], onDelete: Cascade)
+
+  decision DuplicateDecision @default(PENDING)
+
+  reviewedById Int?
+  reviewedBy   User? @relation("DuplicateReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  reviewedAt DateTime?
+
+  reason String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([originalRequestId, possibleDuplicateRequestId])
+  @@index([decision])
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+
+  teamId Int
+  team   ReliefTeam @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  assignedById Int
+  assignedBy   User @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  resourceRequestId Int?
+  resourceRequest   ResourceRequest? @relation(fields: [resourceRequestId], references: [id], onDelete: SetNull)
+
+  type   TaskType
+  status TaskStatus @default(ASSIGNED)
+
+  title       String
+  description String?
+
+  locationAddress String?
+  latitude        Float?
+  longitude       Float?
+
+  outcome String?
+
+  assignedAt  DateTime  @default(now())
+  acceptedAt  DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  updates TaskUpdate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([status])
+  @@index([type])
+  @@index([resourceRequestId])
+}
+
+model TaskUpdate {
+  id Int @id @default(autoincrement())
+
+  taskId Int
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  updatedById Int
+  updatedBy   User @relation("TaskUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  status TaskStatus
+
+  outcome String?
+
+  latitude  Float?
+  longitude Float?
+
+  clientEventId String? @unique
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+model ResourceDelivery {
+  id Int @id @default(autoincrement())
+
+  requestId Int
+  request   ResourceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  campId Int
+  camp   ReliefCamp @relation(fields: [campId], references: [id], onDelete: Restrict)
+
+  teamId Int
+  team   ReliefTeam @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  status DeliveryStatus @default(PLANNED)
+
+  dispatchedAt DateTime?
+  deliveredAt  DateTime?
+
+  notes String?
+
+  items ResourceDeliveryItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestId])
+  @@index([campId])
+  @@index([teamId])
+  @@index([status])
+}
+
+model ResourceDeliveryItem {
+  id Int @id @default(autoincrement())
+
+  deliveryId Int
+  delivery   ResourceDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  quantity Decimal
+
+  @@unique([deliveryId, resourceId])
+  @@index([resourceId])
+}
+
+model EmergencyContact {
+  id Int @id @default(autoincrement())
+
+  name        String
+  serviceType String
+  phoneNumber String
+
+  description String?
+
+  isActive Boolean @default(true)
+
+  displayOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  action AuditAction
+
+  entityType String
+  entityId   Int
+
+  performedById Int?
+  performedBy   User? @relation(fields: [performedById], references: [id], onDelete: SetNull)
+
+  beforeData Json?
+  afterData  Json?
+
+  description String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([performedById])
+  @@index([createdAt])
 }

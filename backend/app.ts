@@ -1,13 +1,31 @@
 import express from "express";
 import cors from "cors";
+import campRoutes from "./routes/campRoutes";
+import emergencyContactRoutes from "./routes/emergencyContactRoutes";
+import authRoutes from "./routes/authRoutes";
+import campManagerRoutes from "./routes/campManagerRoutes";
+import dmaCampRoutes from "./routes/dmaCampRoutes";
+import resourceRoutes from "./routes/resourceRoutes";
+import inventoryRoutes from "./routes/inventoryRoutes";
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
-
 app.get("/", (req, res) => {
     res.send("Disaster Relief Backend Running");
 });
+app.use("/api/auth", authRoutes);
+app.use("/api/camps", campRoutes);
+app.use(
+    "/api/emergency-contacts",
+    emergencyContactRoutes
+);
+app.use(
+    "/api/camp-manager",
+    campManagerRoutes
+);
+app.use("/api/dma/camps", dmaCampRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/inventory", inventoryRoutes);
 
 export default app;
