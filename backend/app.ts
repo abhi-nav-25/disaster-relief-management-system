@@ -12,6 +12,7 @@ import duplicateCheckRoutes from "./routes/duplicateCheckRoutes";
 import requestAssignmentRoutes from "./routes/requestAssignmentRoutes";
 import teamRoutes from "./routes/teamRoutes";
 import taskRoutes from "./routes/taskRoutes";
+import deliveryRoutes from "./routes/deliveryRoutes";
 
 const app = express();
 app.use(cors());
@@ -46,5 +47,9 @@ app.use(
 );
 app.use("/api/teams", teamRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use(
+    "/api/deliveries",
+    deliveryRoutes
+);
 
 export default app;
