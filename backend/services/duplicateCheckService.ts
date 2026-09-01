@@ -1,6 +1,6 @@
 import prisma from "../config/prisma";
 import { DuplicateDecision } from "@prisma/client";
-
+import { logAction } from "./auditLogService";
 import {
     findSimilarRequests,
     createDuplicateCheck,
@@ -115,9 +115,24 @@ export const decideDuplicate = async (
         );
     }
 
-    return reviewDuplicateCheck(
-        checkId,
-        operatorId,
-        decision
-    );
+    const updatedCheck =
+        await reviewDuplicateCheck(
+            checkId,
+            operatorId,
+            decision
+        );
+
+    await logAction({
+        action: "DUPLICATE_DECISION",
+        entityType: "RequestDuplicateCheck",
+        entityId: checkId,
+        performedById: operatorId,
+        afterData: {
+            decision,
+        },
+        description:
+            `Duplicate decision recorded as ${decision}`,
+    });
+
+    return updatedCheck;
 };

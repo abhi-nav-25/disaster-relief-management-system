@@ -3,7 +3,7 @@ import {
     RequestChannel,
     Priority,
 } from "@prisma/client";
-
+import { logAction } from "./auditLogService";
 import {
     createResourceRequest,
     findRequestById,
@@ -180,11 +180,33 @@ export const verifyRequest = async (
         );
     }
 
-    return verifyResourceRequest(
-        requestId,
-        operatorId,
-        verificationStatus
-    );
+    const updatedRequest =
+        await verifyResourceRequest(
+            requestId,
+            operatorId,
+            verificationStatus
+        );
+
+    await logAction({
+        action: verificationStatus === "VERIFIED"
+            ? "VERIFY"
+            : "REJECT",
+        entityType: "ResourceRequest",
+        entityId: requestId,
+        performedById: operatorId,
+        beforeData: {
+            verificationStatus:
+                request.verificationStatus,
+        },
+        afterData: {
+            verificationStatus:
+                updatedRequest.verificationStatus,
+        },
+        description:
+            `Resource request ${verificationStatus.toLowerCase()} by Control Centre Operator`,
+    });
+
+    return updatedRequest;
 };
 
 export const setRequestPriority = async (

@@ -1,6 +1,6 @@
 import prisma from "../config/prisma";
 import { TaskStatus, TaskType } from "@prisma/client";
-
+import { logAction } from "./auditLogService";
 import {
     createTask,
     findTaskById,
@@ -195,10 +195,28 @@ export const changeTaskStatus = async (
         );
     }
 
-    return updateTaskStatus(
-        taskId,
-        userId,
-        status,
-        outcome
-    );
+    const updatedTask =
+        await updateTaskStatus(
+            taskId,
+            userId,
+            status,
+            outcome
+        );
+
+    await logAction({
+        action: "STATUS_CHANGE",
+        entityType: "Task",
+        entityId: taskId,
+        performedById: userId,
+        beforeData: {
+            status: task.status,
+        },
+        afterData: {
+            status: updatedTask.status,
+        },
+        description:
+            `Task status changed from ${task.status} to ${updatedTask.status}`,
+    });
+
+    return updatedTask;
 };

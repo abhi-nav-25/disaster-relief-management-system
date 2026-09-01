@@ -1,6 +1,6 @@
 import prisma from "../config/prisma";
 import { DeliveryStatus } from "@prisma/client";
-
+import { logAction } from "./auditLogService";
 import {
     createDelivery,
     findDeliveryById,
@@ -197,6 +197,7 @@ export const getRequestDeliveries = async (
 };
 
 export const changeDeliveryStatus = async (
+    userId: number,
     deliveryId: number,
     status: DeliveryStatus
 ) => {
@@ -252,6 +253,21 @@ export const changeDeliveryStatus = async (
             updatedDelivery.requestId
         );
     }
+
+    await logAction({
+    action: "STATUS_CHANGE",
+    entityType: "ResourceDelivery",
+    entityId: deliveryId,
+    performedById: userId,
+    beforeData: {
+        status: delivery.status,
+    },
+    afterData: {
+        status: updatedDelivery.status,
+    },
+    description:
+        `Resource delivery status changed from ${delivery.status} to ${updatedDelivery.status}`,
+});
 
     return updatedDelivery;
 };

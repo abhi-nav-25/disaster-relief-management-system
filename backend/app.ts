@@ -13,6 +13,7 @@ import requestAssignmentRoutes from "./routes/requestAssignmentRoutes";
 import teamRoutes from "./routes/teamRoutes";
 import taskRoutes from "./routes/taskRoutes";
 import deliveryRoutes from "./routes/deliveryRoutes";
+import auditLogRoutes from "./routes/auditLogRoutes";
 
 const app = express();
 app.use(cors());
@@ -51,5 +52,8 @@ app.use(
     "/api/deliveries",
     deliveryRoutes
 );
-
+app.use(
+    "/api/audit-logs",
+    auditLogRoutes
+);
 export default app;

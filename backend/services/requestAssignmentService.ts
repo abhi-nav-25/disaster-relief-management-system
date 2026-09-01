@@ -6,6 +6,8 @@ import {
     findRequestAssignments,
 } from "../repositories/requestAssignmentRepository";
 
+import { logAction } from "./auditLogService";
+
 export const getAvailableTeams = async () => {
     return findAvailableTeams();
 };
@@ -80,12 +82,28 @@ export const assignRequestToTeam = async (
         );
     }
 
-    return createRequestAssignment(
-        requestId,
-        teamId,
-        operatorId,
-        notes
-    );
+    const assignment =
+        await createRequestAssignment(
+            requestId,
+            teamId,
+            operatorId,
+            notes
+        );
+
+    await logAction({
+        action: "ASSIGN",
+        entityType: "ResourceRequest",
+        entityId: requestId,
+        performedById: operatorId,
+        afterData: {
+            teamId,
+            assignmentId: assignment.id,
+        },
+        description:
+            `Relief team ${teamId} assigned to resource request ${requestId}`,
+    });
+
+    return assignment;
 };
 
 export const getAssignments = async (

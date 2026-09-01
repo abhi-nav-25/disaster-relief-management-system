@@ -134,6 +134,13 @@ export const updateStatus = async (
     res: Response
 ) => {
     try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Authentication required",
+            });
+        }
         const deliveryId =
             Number(req.params.id);
 
@@ -151,6 +158,7 @@ export const updateStatus = async (
 
         const delivery =
             await changeDeliveryStatus(
+                userId,
                 deliveryId,
                 status
             );
