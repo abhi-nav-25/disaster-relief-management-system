@@ -62,7 +62,20 @@ export const createResourceDeliveryTask = async (
             "A task can only be created for an assigned request"
         );
     }
+    const assignment =
+        await prisma.resourceRequestAssignment.findFirst({
+            where: {
+                requestId: data.resourceRequestId,
+                teamId: data.teamId,
+                unassignedAt: null,
+            },
+        });
 
+    if (!assignment) {
+        throw new Error(
+            "Selected team is not assigned to this request"
+        );
+    }
     const team =
         await prisma.reliefTeam.findUnique({
             where: {
@@ -98,7 +111,8 @@ export const createResourceDeliveryTask = async (
 };
 
 export const getTask = async (
-    taskId: number
+    taskId: number,
+    userId: number
 ) => {
     if (!Number.isInteger(taskId) || taskId <= 0) {
         throw new Error("Invalid task ID");
@@ -109,7 +123,34 @@ export const getTask = async (
     if (!task) {
         throw new Error("Task not found");
     }
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            role: true,
+        },
+    });
 
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    if (user.role === "RELIEF_TEAM") {
+        const membership =
+            await prisma.reliefTeamMember.findFirst({
+                where: {
+                    userId,
+                    teamId: task.teamId,
+                },
+            });
+
+        if (!membership) {
+            throw new Error(
+                "You can only view tasks assigned to your team"
+            );
+        }
+    }
     return task;
 };
 

@@ -79,7 +79,22 @@ export const updateOwnCampInventory = async (
             "Transaction quantity must be greater than zero"
         );
     }
+    const resource = await prisma.resource.findUnique({
+        where: {
+            id: resourceId,
+        },
+        select: {
+            isActive: true,
+        },
+    });
 
+    if (!resource) {
+        throw new Error("Resource not found");
+    }
+
+    if (!resource.isActive) {
+        throw new Error("Resource is inactive");
+    }
     return updateInventory(
         user.managedCampId,
         resourceId,

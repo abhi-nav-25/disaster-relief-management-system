@@ -115,6 +115,22 @@ export const decideDuplicate = async (
         );
     }
 
+    const check = await prisma.requestDuplicateCheck.findUnique({
+        where: {
+            id: checkId,
+        },
+    });
+
+    if (!check) {
+        throw new Error("Duplicate check not found");
+    }
+
+    if (check.decision !== "PENDING") {
+        throw new Error(
+            "Duplicate check has already been reviewed"
+        );
+    }
+
     const updatedCheck =
         await reviewDuplicateCheck(
             checkId,

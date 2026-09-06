@@ -77,13 +77,24 @@ export const createRequest = async (
 };
 
 export const getOneRequest = async (
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response
 ) => {
     try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Authentication required",
+            });
+        }
+
         const id = Number(req.params.id);
 
-        const request = await getRequest(id);
+        const request = await getRequest(
+            id,
+            userId
+        );
 
         return res.status(200).json({
             request,

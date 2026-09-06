@@ -209,7 +209,43 @@ export const changeDeliveryStatus = async (
             "Delivery not found"
         );
     }
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            role: true,
+        },
+    });
 
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    if (user.role === "RELIEF_TEAM") {
+        const membership =
+            await prisma.reliefTeamMember.findFirst({
+                where: {
+                    userId,
+                    teamId: delivery.teamId,
+                },
+            });
+
+        if (!membership) {
+            throw new Error(
+                "You can only update deliveries assigned to your team"
+            );
+        }
+    }
+
+    if (
+        user.role !== "CONTROL_CENTRE_OPERATOR" &&
+        user.role !== "RELIEF_TEAM"
+    ) {
+        throw new Error(
+            "You do not have permission to update delivery status"
+        );
+    }
     const allowedTransitions: Record<
         DeliveryStatus,
         DeliveryStatus[]
@@ -255,19 +291,19 @@ export const changeDeliveryStatus = async (
     }
 
     await logAction({
-    action: "STATUS_CHANGE",
-    entityType: "ResourceDelivery",
-    entityId: deliveryId,
-    performedById: userId,
-    beforeData: {
-        status: delivery.status,
-    },
-    afterData: {
-        status: updatedDelivery.status,
-    },
-    description:
-        `Resource delivery status changed from ${delivery.status} to ${updatedDelivery.status}`,
-});
+        action: "STATUS_CHANGE",
+        entityType: "ResourceDelivery",
+        entityId: deliveryId,
+        performedById: userId,
+        beforeData: {
+            status: delivery.status,
+        },
+        afterData: {
+            status: updatedDelivery.status,
+        },
+        description:
+            `Resource delivery status changed from ${delivery.status} to ${updatedDelivery.status}`,
+    });
 
     return updatedDelivery;
 };

@@ -63,7 +63,18 @@ export const createCampResourceRequest = async (
             "At least one resource is required"
         );
     }
+    const resourceIds = data.items.map(
+        (item) => item.resourceId
+    );
 
+    if (
+        new Set(resourceIds).size !==
+        resourceIds.length
+    ) {
+        throw new Error(
+            "A resource can only appear once in a request"
+        );
+    }
     for (const item of data.items) {
         if (
             !Number.isInteger(item.resourceId) ||
@@ -80,6 +91,26 @@ export const createCampResourceRequest = async (
                 "Resource quantity must be greater than zero"
             );
         }
+        const resource = await prisma.resource.findUnique({
+            where: {
+                id: item.resourceId,
+            },
+            select: {
+                isActive: true,
+            },
+        });
+
+        if (!resource) {
+            throw new Error(
+                `Resource ${item.resourceId} not found`
+            );
+        }
+
+        if (!resource.isActive) {
+            throw new Error(
+                `Resource ${item.resourceId} is inactive`
+            );
+        }
     }
 
     return createResourceRequest({
@@ -92,7 +123,10 @@ export const createCampResourceRequest = async (
     });
 };
 
-export const getRequest = async (id: number) => {
+export const getRequest = async (
+    id: number,
+    userId: number
+) => {
     if (!Number.isInteger(id) || id <= 0) {
         throw new Error("Invalid request ID");
     }
@@ -103,7 +137,46 @@ export const getRequest = async (id: number) => {
         throw new Error("Resource request not found");
     }
 
-    return request;
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            role: true,
+            managedCampId: true,
+        },
+    });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    if (user.role === "CONTROL_CENTRE_OPERATOR") {
+        return request;
+    }
+
+    if (user.role === "RELIEF_CAMP_MANAGER") {
+        if (!user.managedCampId) {
+            throw new Error(
+                "Relief Camp Manager is not assigned to a camp"
+            );
+        }
+
+        if (
+            request.campId !==
+            user.managedCampId
+        ) {
+            throw new Error(
+                "You do not have permission to view this request"
+            );
+        }
+
+        return request;
+    }
+
+    throw new Error(
+        "You do not have permission to view this request"
+    );
 };
 
 export const getCampRequests = async (
@@ -238,7 +311,14 @@ export const setRequestPriority = async (
     if (!request) {
         throw new Error("Resource request not found");
     }
-
+    if (
+        request.status === "FULFILLED" ||
+        request.status === "CANCELLED"
+    ) {
+        throw new Error(
+            "Cannot change priority of a completed or cancelled request"
+        );
+    }
     return updateRequestPriority(
         requestId,
         priority

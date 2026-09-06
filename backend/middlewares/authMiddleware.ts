@@ -37,9 +37,20 @@ export const authenticate = (
         }
 
         const decoded = jwt.verify(token, JWT_SECRET) as {
-            userId: number;
-            role: string;
+            userId?: unknown;
+            role?: unknown;
         };
+
+        if (
+            typeof decoded.userId !== "number" ||
+            !Number.isInteger(decoded.userId) ||
+            decoded.userId <= 0 ||
+            typeof decoded.role !== "string"
+        ) {
+            return res.status(401).json({
+                message: "Invalid authentication token",
+            });
+        }
 
         req.user = {
             userId: decoded.userId,

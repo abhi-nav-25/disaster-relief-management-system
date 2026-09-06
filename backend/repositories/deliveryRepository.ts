@@ -124,8 +124,11 @@ export const updateDeliveryStatus = async (
             data.deliveredAt = new Date();
         }
 
-        // Only update inventory when delivery is completed.
-        if (status === "DELIVERED") {
+        // Update inventory when resources are delivered.
+        if (
+            status === "DELIVERED" ||
+            status === "PARTIALLY_DELIVERED"
+        ) {
             for (const item of delivery.items) {
                 const inventory =
                     await tx.campInventory.findUnique({

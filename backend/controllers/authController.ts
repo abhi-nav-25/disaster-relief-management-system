@@ -25,7 +25,19 @@ export const register = async (
                     "Name, email, password and role are required",
             });
         }
-
+        if (
+            ![
+                "CITIZEN",
+                "RELIEF_CAMP_MANAGER",
+                "CONTROL_CENTRE_OPERATOR",
+                "DMA_SUPERVISOR",
+                "RELIEF_TEAM",
+            ].includes(role)
+        ) {
+            return res.status(400).json({
+                message: "Invalid user role",
+            });
+        }
         const user = await registerUser({
             name,
             email,

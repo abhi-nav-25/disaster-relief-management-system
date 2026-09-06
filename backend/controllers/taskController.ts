@@ -64,13 +64,24 @@ export const createTask = async (
 };
 
 export const getOneTask = async (
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response
 ) => {
     try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Authentication required",
+            });
+        }
+
         const taskId = Number(req.params.id);
 
-        const task = await getTask(taskId);
+        const task = await getTask(
+            taskId,
+            userId
+        );
 
         return res.status(200).json({
             task,
