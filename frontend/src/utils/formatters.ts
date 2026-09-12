@@ -1,4 +1,4 @@
-﻿import type { UserRole } from '../types/auth.types';
+import type { UserRole } from '../types/auth.types';
 import type {
   CampOperationalStatus,
   DeliveryStatus,
@@ -181,7 +181,7 @@ export const getRoleDashboardPath = (role?: UserRole): string => {
     case 'CONTROL_CENTRE_OPERATOR':
       return '/dashboard/control-centre';
     case 'DMA_SUPERVISOR':
-      return '/dashboard/dma';
+      return '/dashboard/dma-supervisor';
     case 'RELIEF_TEAM':
       return '/dashboard/team';
     default:

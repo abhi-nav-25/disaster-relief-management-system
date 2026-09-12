@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ShieldAlert,
@@ -66,11 +66,11 @@ export const DashboardLayout: React.FC = () => {
         ];
       case 'DMA_SUPERVISOR':
         return [
-          { label: 'DMA Executive Dashboard', path: '/dashboard/dma', icon: ShieldCheck },
-          { label: 'Relief Camps Master', path: '/dashboard/dma#camps', icon: Building2 },
-          { label: 'Relief Teams', path: '/dashboard/dma#teams', icon: Users },
-          { label: 'Resource Catalog', path: '/dashboard/dma#resources', icon: Package },
-          { label: 'System Audit Logs', path: '/dashboard/dma#audit', icon: FileSearch },
+          { label: 'DMA Executive Dashboard', path: '/dashboard/dma-supervisor', icon: ShieldCheck },
+          { label: 'Relief Camps Master', path: '/dashboard/dma-supervisor#camps', icon: Building2 },
+          { label: 'Relief Teams', path: '/dashboard/dma-supervisor#teams', icon: Users },
+          { label: 'Resource Catalog', path: '/dashboard/dma-supervisor#resources', icon: Package },
+          { label: 'System Audit Logs', path: '/dashboard/dma-supervisor#audit', icon: FileSearch },
         ];
       case 'RELIEF_TEAM':
         return [

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
@@ -73,7 +73,8 @@ export const AppRoutes: React.FC = () => {
 
           {/* DMA Supervisor Dashboard */}
           <Route element={<RoleRoute allowedRoles={['DMA_SUPERVISOR']} />}>
-            <Route path="/dashboard/dma" element={<DmaSupervisorDashboard />} />
+            <Route path="/dashboard/dma-supervisor" element={<DmaSupervisorDashboard />} />
+            <Route path="/dashboard/dma" element={<Navigate to="/dashboard/dma-supervisor" replace />} />
           </Route>
 
           {/* Relief Team Dashboard */}
