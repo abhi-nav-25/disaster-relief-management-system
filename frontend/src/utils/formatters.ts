@@ -27,6 +27,23 @@ export const formatRoleName = (role?: UserRole | string): string => {
   }
 };
 
+export const getRoleDepartmentName = (role?: UserRole | string): string => {
+  switch (role) {
+    case 'CONTROL_CENTRE_OPERATOR':
+      return 'Operational Command';
+    case 'RELIEF_CAMP_MANAGER':
+      return 'Camp Operations';
+    case 'DMA_SUPERVISOR':
+      return 'Disaster Management Authority';
+    case 'RELIEF_TEAM':
+      return 'Field Operations';
+    case 'CITIZEN':
+      return 'Public Assistance';
+    default:
+      return 'Operational Unit';
+  }
+};
+
 export const getRoleBadgeColor = (role?: UserRole | string): string => {
   switch (role) {
     case 'DMA_SUPERVISOR':

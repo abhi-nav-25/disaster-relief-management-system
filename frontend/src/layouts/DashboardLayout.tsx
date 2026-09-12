@@ -22,7 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { formatRoleName, getRoleBadgeColor } from '../utils/formatters';
+import { formatRoleName, getRoleBadgeColor, getRoleDepartmentName } from '../utils/formatters';
 import type { UserRole } from '../types/auth.types';
 
 export const DashboardLayout: React.FC = () => {
@@ -128,8 +128,8 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Current Role Banner */}
         <div className="px-5 py-4 border-b border-slate-800/80 bg-slate-950/40">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400">
               OPERATIONAL ROLE
             </span>
             <span className="flex h-2 w-2 relative">
@@ -137,14 +137,19 @@ export const DashboardLayout: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           </div>
-          <div className="font-semibold text-sm text-slate-100">{formatRoleName(user?.role)}</div>
+          <div className="font-bold text-sm text-slate-100 uppercase tracking-wide">
+            {formatRoleName(user?.role)}
+          </div>
+          <p className="text-[11px] font-medium text-slate-400 mt-0.5">
+            {getRoleDepartmentName(user?.role)}
+          </p>
           {user?.managedCamp && (
-            <p className="text-xs text-blue-300 mt-0.5 truncate">
+            <p className="text-xs text-blue-300 mt-1 truncate">
               Camp: <strong>{user.managedCamp.name}</strong>
             </p>
           )}
           {user?.teams && user.teams.length > 0 && (
-            <p className="text-xs text-amber-300 mt-0.5 truncate">
+            <p className="text-xs text-amber-300 mt-1 truncate">
               Team: <strong>{user.teams[0].teamName}</strong>
             </p>
           )}
