@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Compass, AlertCircle, Users } from 'lucide-react';
 import { campService } from '../../services/camp.service';
 import type { ReliefCamp } from '../../types/models.types';
@@ -60,7 +60,15 @@ export const NearestCampsPage: React.FC = () => {
       },
       (err) => {
         setIsLocating(false);
-        setError(`Unable to retrieve location: ${err.message}. Please enter coordinates manually.`);
+        let msg = 'Unable to retrieve location. Please enter coordinates manually.';
+        if (err.code === err.PERMISSION_DENIED) {
+          msg = 'Location permission was denied. Please enable location permissions in your browser or enter coordinates manually.';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          msg = 'Location signal is unavailable. Please enter coordinates manually.';
+        } else if (err.code === err.TIMEOUT) {
+          msg = 'Location request timed out. Please try again or enter coordinates manually.';
+        }
+        setError(msg);
       },
       { timeout: 10000, enableHighAccuracy: true }
     );

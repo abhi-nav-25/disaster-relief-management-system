@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShieldAlert, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -131,7 +131,14 @@ export const LoginPage: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Role Profiles Reference / Quick Form Fill:</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('citizen@crisis.org')}
+                className="p-2 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60 font-medium text-left transition-colors cursor-pointer"
+              >
+                Citizen
+              </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('control@crisis.org')}
