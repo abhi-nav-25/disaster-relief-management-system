@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User, LoginCredentials, RegisterPayload, UserRole } from '../types/auth.types';
 import { authService } from '../services/auth.service';
 
@@ -51,10 +51,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authService.login(credentials);
       setToken(response.token);
-      setUser(response.user);
       localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      return response.user;
+
+      // Fetch full profile immediately so managedCamp, teams, etc. are available without refresh
+      try {
+        const profileData = await authService.getProfile();
+        setUser(profileData.user);
+        localStorage.setItem('user', JSON.stringify(profileData.user));
+        return profileData.user;
+      } catch {
+        setUser(response.user);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        return response.user;
+      }
     } finally {
       setIsLoading(false);
     }

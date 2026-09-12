@@ -183,7 +183,7 @@ export const getRoleDashboardPath = (role?: UserRole): string => {
     case 'DMA_SUPERVISOR':
       return '/dashboard/dma-supervisor';
     case 'RELIEF_TEAM':
-      return '/dashboard/team';
+      return '/dashboard/relief-team';
     default:
       return '/';
   }

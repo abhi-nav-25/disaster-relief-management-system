@@ -74,9 +74,9 @@ export const DashboardLayout: React.FC = () => {
         ];
       case 'RELIEF_TEAM':
         return [
-          { label: 'Team Operations', path: '/dashboard/team', icon: Activity },
-          { label: 'Assigned Field Tasks', path: '/dashboard/team#tasks', icon: CheckSquare },
-          { label: 'Resource Deliveries', path: '/dashboard/team#deliveries', icon: Truck },
+          { label: 'Team Operations', path: '/dashboard/relief-team', icon: Activity },
+          { label: 'Assigned Field Tasks', path: '/dashboard/relief-team#tasks', icon: CheckSquare },
+          { label: 'Resource Deliveries', path: '/dashboard/relief-team#deliveries', icon: Truck },
           { label: 'Emergency Helplines', path: '/emergency-contacts', icon: PhoneCall },
         ];
       default:

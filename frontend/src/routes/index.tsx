@@ -79,7 +79,8 @@ export const AppRoutes: React.FC = () => {
 
           {/* Relief Team Dashboard */}
           <Route element={<RoleRoute allowedRoles={['RELIEF_TEAM']} />}>
-            <Route path="/dashboard/team" element={<ReliefTeamDashboard />} />
+            <Route path="/dashboard/relief-team" element={<ReliefTeamDashboard />} />
+            <Route path="/dashboard/team" element={<Navigate to="/dashboard/relief-team" replace />} />
           </Route>
         </Route>
       </Route>
