@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const duplicateCheckController_1 = require("../controllers/duplicateCheckController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const router = (0, express_1.Router)();
+router.post("/request/:id/detect", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR"), duplicateCheckController_1.detectDuplicates);
+router.get("/request/:id", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR"), duplicateCheckController_1.getChecks);
+router.put("/:id/review", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR"), duplicateCheckController_1.reviewDuplicate);
+exports.default = router;

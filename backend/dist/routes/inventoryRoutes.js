@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const inventoryController_1 = require("../controllers/inventoryController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const router = (0, express_1.Router)();
+router.get("/my-camp", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("RELIEF_CAMP_MANAGER"), inventoryController_1.getInventory);
+router.put("/my-camp/:resourceId", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("RELIEF_CAMP_MANAGER"), inventoryController_1.updateInventory);
+exports.default = router;

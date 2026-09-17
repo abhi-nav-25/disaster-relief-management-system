@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const teamController_1 = require("../controllers/teamController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const router = (0, express_1.Router)();
+router.get("/", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR", "DMA_SUPERVISOR"), teamController_1.getAllTeams);
+router.get("/:id", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR", "DMA_SUPERVISOR"), teamController_1.getOneTeam);
+router.post("/", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("DMA_SUPERVISOR"), teamController_1.create);
+router.put("/:id/status", authMiddleware_1.authenticate, (0, roleMiddleware_1.authorize)("CONTROL_CENTRE_OPERATOR", "DMA_SUPERVISOR", "RELIEF_TEAM"), teamController_1.updateStatus);
+exports.default = router;
