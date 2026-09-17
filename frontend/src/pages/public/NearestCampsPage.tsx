@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Compass, AlertCircle, Users } from 'lucide-react';
+import { MapPin, Navigation, Compass, AlertCircle, Users, Download } from 'lucide-react';
 import { campService } from '../../services/camp.service';
 import type { ReliefCamp } from '../../types/models.types';
 import { Card } from '../../components/common/Card';
@@ -60,17 +60,17 @@ export const NearestCampsPage: React.FC = () => {
       },
       (err) => {
         setIsLocating(false);
-        let msg = 'Unable to retrieve location. Please enter coordinates manually.';
+        let msg = 'Unable to retrieve your location.';
         if (err.code === err.PERMISSION_DENIED) {
-          msg = 'Location permission was denied. Please enable location permissions in your browser or enter coordinates manually.';
+          msg = 'Location permission was denied. Please allow location access or input coordinates manually.';
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          msg = 'Location signal is unavailable. Please enter coordinates manually.';
+          msg = 'Location information is unavailable.';
         } else if (err.code === err.TIMEOUT) {
-          msg = 'Location request timed out. Please try again or enter coordinates manually.';
+          msg = 'Location request timed out.';
         }
         setError(msg);
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
 
@@ -81,17 +81,31 @@ export const NearestCampsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-emerald-600 text-xs font-semibold uppercase tracking-wider mb-1">
-          <Compass className="w-4 h-4" />
-          <span>Shelter Navigation Grid</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+          <div className="flex items-center gap-2 text-emerald-600 text-xs font-semibold uppercase tracking-wider mb-1">
+            <Compass className="w-4 h-4" />
+            <span>Shelter Navigation Grid</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            Find Nearest Relief Camp
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Calculate the closest operational relief shelters based on your live GPS coordinates
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-          Find Nearest Relief Camp
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Calculate the closest operational relief shelters based on your live GPS coordinates
-        </p>
+
+        <div>
+          <a
+            href="/city-relief-map.svg"
+            download="city-relief-map.svg"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 shadow-xs cursor-pointer"
+            title="Download City Map (Offline SVG)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download City Map</span>
+          </a>
+        </div>
       </div>
 
       {/* Coordinate Search & Geolocation Box */}

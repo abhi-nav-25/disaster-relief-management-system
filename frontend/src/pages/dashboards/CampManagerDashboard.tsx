@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Building2,
   Users,
@@ -41,12 +42,33 @@ import type {
   InventoryTransactionType,
 } from '../../types/models.types';
 
+type CampManagerTab = 'overview' | 'inventory' | 'requests';
+
+const getTabFromHash = (hash: string): CampManagerTab => {
+  const clean = hash.replace('#', '').toLowerCase();
+  if (clean === 'inventory') return 'inventory';
+  if (clean === 'requests') return 'requests';
+  return 'overview';
+};
+
 export const CampManagerDashboard: React.FC = () => {
   const { user, refreshProfile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const camp = user?.managedCamp;
 
-  // Active Tab: 'overview' | 'inventory' | 'requests'
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'requests'>('overview');
+  // Active Tab synchronized with URL hash (#inventory, #requests, #overview/empty)
+  const [activeTab, setActiveTab] = useState<CampManagerTab>(() => getTabFromHash(location.hash));
+
+  useEffect(() => {
+    setActiveTab(getTabFromHash(location.hash));
+  }, [location.hash]);
+
+  const switchTab = (tab: CampManagerTab) => {
+    setActiveTab(tab);
+    const targetHash = tab === 'overview' ? '' : `#${tab}`;
+    navigate(`/dashboard/camp-manager${targetHash}`, { replace: true });
+  };
 
   // Core Data States
   const [inventory, setInventory] = useState<CampInventory[]>([]);
@@ -310,7 +332,7 @@ export const CampManagerDashboard: React.FC = () => {
       // Reload requests
       const updatedRequests = await resourceRequestService.getMyCampRequests();
       setRequests(updatedRequests);
-      setActiveTab('requests');
+      switchTab('requests');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create resource request.';
       setCreateRequestError(msg);
@@ -447,20 +469,18 @@ export const CampManagerDashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              variant="outline"
+              variant="dark-outline"
               size="md"
               leftIcon={<Edit3 className="w-4 h-4" />}
               onClick={handleOpenCampStatusModal}
-              className="bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600"
             >
               Update Camp Status
             </Button>
             <Button
-              variant="outline"
+              variant="dark-outline"
               size="md"
               leftIcon={<Layers className="w-4 h-4" />}
               onClick={() => handleOpenInventoryModal()}
-              className="bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600"
             >
               Update Stock
             </Button>
@@ -556,8 +576,8 @@ export const CampManagerDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-2 shadow-sm">
         <button
-          onClick={() => setActiveTab('overview')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+          onClick={() => switchTab('overview')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
             activeTab === 'overview'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -567,8 +587,8 @@ export const CampManagerDashboard: React.FC = () => {
           Overview & Operations
         </button>
         <button
-          onClick={() => setActiveTab('inventory')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+          onClick={() => switchTab('inventory')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
             activeTab === 'inventory'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -578,8 +598,8 @@ export const CampManagerDashboard: React.FC = () => {
           Camp Inventory ({inventory.length})
         </button>
         <button
-          onClick={() => setActiveTab('requests')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+          onClick={() => switchTab('requests')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
             activeTab === 'requests'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -677,7 +697,7 @@ export const CampManagerDashboard: React.FC = () => {
                     <Button size="sm" variant="outline" onClick={() => handleOpenInventoryModal()}>
                       + Update Stock
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setActiveTab('inventory')}>
+                    <Button size="sm" variant="ghost" onClick={() => switchTab('inventory')}>
                       View All ({inventory.length})
                     </Button>
                   </div>
@@ -760,7 +780,7 @@ export const CampManagerDashboard: React.FC = () => {
                     <Button size="sm" variant="primary" onClick={handleOpenCreateRequestModal}>
                       + New Request
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setActiveTab('requests')}>
+                    <Button size="sm" variant="ghost" onClick={() => switchTab('requests')}>
                       View All ({requests.length})
                     </Button>
                   </div>

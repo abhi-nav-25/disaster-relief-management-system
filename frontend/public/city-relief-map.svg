@@ -1,0 +1,174 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" style="background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Background Grid -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="1"/>
+    </pattern>
+    <pattern id="grid-dense" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#1e293b" stroke-width="0.3"/>
+    </pattern>
+    <!-- Gradients -->
+    <linearGradient id="header-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="river-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.2"/>
+    </linearGradient>
+    <!-- Drop Shadow -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background Grids -->
+  <rect width="1200" height="800" fill="#0b0f19"/>
+  <rect width="1200" height="800" fill="url(#grid-dense)"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+
+  <!-- Top Banner / Header -->
+  <rect x="0" y="0" width="1200" height="80" fill="url(#header-grad)" filter="url(#shadow)"/>
+  <rect x="0" y="78" width="1200" height="2" fill="#38bdf8"/>
+  
+  <g transform="translate(30, 24)">
+    <circle cx="20" cy="20" r="18" fill="#ef4444"/>
+    <path d="M 14 20 L 26 20 M 20 14 L 20 26" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="50" y="18" fill="#ffffff" font-size="18" font-weight="800" letter-spacing="0.5">CRISISRELIEF DRMS - OFFICIAL CITY RELIEF &amp; EVACUATION MAP</text>
+    <text x="50" y="36" fill="#93c5fd" font-size="11" font-weight="500">OFFLINE DISASTER RESPONSE REFERENCE GRID - COORDINATE SYSTEM WGS84</text>
+  </g>
+
+  <g transform="translate(920, 20)">
+    <rect x="0" y="0" width="250" height="42" rx="6" fill="#0f172a" fill-opacity="0.8" stroke="#334155" stroke-width="1"/>
+    <text x="12" y="18" fill="#94a3b8" font-size="10" font-weight="600">HOTLINES (24/7 TOLL-FREE)</text>
+    <text x="12" y="34" fill="#fbbf24" font-size="13" font-weight="800">112 / 1077 / 108</text>
+  </g>
+
+  <!-- Waterway / Geographic Feature -->
+  <path d="M 150 80 Q 280 260 220 440 T 400 680 T 550 800" fill="none" stroke="url(#river-grad)" stroke-width="48" stroke-linecap="round"/>
+  <path d="M 150 80 Q 280 260 220 440 T 400 680 T 550 800" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8 6" opacity="0.6"/>
+  <text x="210" y="360" fill="#38bdf8" font-size="11" font-weight="600" opacity="0.7" transform="rotate(70 210 360)">RIVER DELTA ZONE</text>
+
+  <!-- Sector Boundaries -->
+  <g stroke="#334155" stroke-width="1.5" stroke-dasharray="6 6">
+    <line x1="580" y1="100" x2="580" y2="760"/>
+    <line x1="40" y1="440" x2="1160" y2="440"/>
+  </g>
+
+  <text x="60" y="120" fill="#64748b" font-size="13" font-weight="700" letter-spacing="1">SECTOR A (NORTH-WEST)</text>
+  <text x="610" y="120" fill="#64748b" font-size="13" font-weight="700" letter-spacing="1">SECTOR B (NORTH-EAST)</text>
+  <text x="60" y="470" fill="#64748b" font-size="13" font-weight="700" letter-spacing="1">SECTOR C (SOUTH-WEST)</text>
+  <text x="610" y="470" fill="#64748b" font-size="13" font-weight="700" letter-spacing="1">SECTOR D (SOUTH-EAST)</text>
+
+  <!-- Major Evacuation Arterials / Highway Corridors -->
+  <!-- Arterial 1 -->
+  <path d="M 60 220 L 520 220 L 780 340 L 1140 340" fill="none" stroke="#475569" stroke-width="8"/>
+  <path d="M 60 220 L 520 220 L 780 340 L 1140 340" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+  <text x="260" y="210" fill="#4ade80" font-size="10" font-weight="700">PRIMARY EVACUATION ROUTE 1 (NORTH ARTERY)</text>
+
+  <!-- Arterial 2 -->
+  <path d="M 180 740 L 460 520 L 860 520 L 1120 680" fill="none" stroke="#475569" stroke-width="8"/>
+  <path d="M 180 740 L 460 520 L 860 520 L 1120 680" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+  <text x="540" y="510" fill="#4ade80" font-size="10" font-weight="700">PRIMARY EVACUATION ROUTE 2 (SOUTH EXPRESSWAY)</text>
+
+  <!-- Cross Arterial -->
+  <path d="M 740 100 L 740 760" fill="none" stroke="#475569" stroke-width="6"/>
+  <path d="M 740 100 L 740 760" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="750" y="660" fill="#fbbf24" font-size="10" font-weight="700" transform="rotate(90 750 660)">CENTRAL RELIEF CORRIDOR</text>
+
+  <!-- Relief Camps Nodes -->
+  <!-- Camp Alpha -->
+  <g transform="translate(360, 220)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="22" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="-8" y="-8" width="16" height="16" fill="#ffffff" rx="2"/>
+    <path d="M -5 0 L 5 0 M 0 -5 L 0 5" stroke="#1e40af" stroke-width="2.5"/>
+    
+    <rect x="28" y="-30" width="190" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="38" y="-12" fill="#60a5fa" font-size="10" font-weight="800">CAMP ALPHA (MAIN MEDICAL)</text>
+    <text x="38" y="4" fill="#cbd5e1" font-size="9">Code: CAMP-ALPHA-01 | Cap: 500</text>
+    <text x="38" y="18" fill="#10b981" font-size="9" font-weight="700">STATUS: OPERATIONAL (74%)</text>
+  </g>
+
+  <!-- Camp Beta -->
+  <g transform="translate(880, 260)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="22" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="-8" y="-8" width="16" height="16" fill="#ffffff" rx="2"/>
+    <path d="M -5 0 L 5 0 M 0 -5 L 0 5" stroke="#1e40af" stroke-width="2.5"/>
+
+    <rect x="28" y="-30" width="190" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="38" y="-12" fill="#60a5fa" font-size="10" font-weight="800">CAMP BETA (EAST RESCUE)</text>
+    <text x="38" y="4" fill="#cbd5e1" font-size="9">Code: CAMP-BETA-02 | Cap: 350</text>
+    <text x="38" y="18" fill="#10b981" font-size="9" font-weight="700">STATUS: OPERATIONAL (45%)</text>
+  </g>
+
+  <!-- Camp Gamma -->
+  <g transform="translate(320, 580)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="22" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="-8" y="-8" width="16" height="16" fill="#ffffff" rx="2"/>
+    <path d="M -5 0 L 5 0 M 0 -5 L 0 5" stroke="#1e40af" stroke-width="2.5"/>
+
+    <rect x="28" y="-30" width="190" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="38" y="-12" fill="#60a5fa" font-size="10" font-weight="800">CAMP GAMMA (COMMUNITY)</text>
+    <text x="38" y="4" fill="#cbd5e1" font-size="9">Code: CAMP-GAMMA-03 | Cap: 600</text>
+    <text x="38" y="18" fill="#10b981" font-size="9" font-weight="700">STATUS: OPERATIONAL (82%)</text>
+  </g>
+
+  <!-- Camp Delta -->
+  <g transform="translate(940, 560)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="22" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/>
+    <rect x="-8" y="-8" width="16" height="16" fill="#ffffff" rx="2"/>
+    <path d="M -5 0 L 5 0 M 0 -5 L 0 5" stroke="#1e40af" stroke-width="2.5"/>
+
+    <rect x="-218" y="-30" width="190" height="60" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="-208" y="-12" fill="#60a5fa" font-size="10" font-weight="800">CAMP DELTA (STADIUM)</text>
+    <text x="-208" y="4" fill="#cbd5e1" font-size="9">Code: CAMP-DELTA-04 | Cap: 1200</text>
+    <text x="-208" y="18" fill="#10b981" font-size="9" font-weight="700">STATUS: OPERATIONAL (30%)</text>
+  </g>
+
+  <!-- Emergency Helipads / Distribution Centers -->
+  <g transform="translate(620, 360)">
+    <circle cx="0" cy="0" r="16" fill="#065f46" stroke="#34d399" stroke-width="1.5"/>
+    <text x="0" y="5" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">H</text>
+    <text x="22" y="4" fill="#34d399" font-size="9" font-weight="700">AIR RELIEF HELIPAD 1</text>
+  </g>
+
+  <g transform="translate(560, 640)">
+    <circle cx="0" cy="0" r="16" fill="#065f46" stroke="#34d399" stroke-width="1.5"/>
+    <text x="0" y="5" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">H</text>
+    <text x="22" y="4" fill="#34d399" font-size="9" font-weight="700">AIR RELIEF HELIPAD 2</text>
+  </g>
+
+  <!-- Legend & Instructions Panel -->
+  <g transform="translate(30, 650)" filter="url(#shadow)">
+    <rect x="0" y="0" width="240" height="115" rx="8" fill="#0f172a" fill-opacity="0.95" stroke="#334155" stroke-width="1.5"/>
+    <text x="14" y="20" fill="#f8fafc" font-size="11" font-weight="700">MAP LEGEND &amp; PROTOCOL</text>
+    <line x1="14" y1="26" x2="226" y2="26" stroke="#334155" stroke-width="1"/>
+    
+    <circle cx="22" cy="42" r="6" fill="#1e40af" stroke="#60a5fa" stroke-width="1"/>
+    <text x="36" y="45" fill="#cbd5e1" font-size="9">Operational Relief Camp / Shelter</text>
+
+    <line x1="16" y1="62" x2="28" y2="62" stroke="#22c55e" stroke-width="3"/>
+    <text x="36" y="65" fill="#cbd5e1" font-size="9">Primary Evacuation Highway</text>
+
+    <circle cx="22" cy="82" r="6" fill="#065f46" stroke="#34d399" stroke-width="1"/>
+    <text x="36" y="85" fill="#cbd5e1" font-size="9">Emergency Helicopter Aid Drop</text>
+
+    <text x="14" y="105" fill="#94a3b8" font-size="8">In emergency, head to nearest marked Camp.</text>
+  </g>
+
+  <!-- Compass Rose -->
+  <g transform="translate(1130, 140)">
+    <circle cx="0" cy="0" r="28" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <polygon points="0,-22 5,-4 0,0" fill="#ef4444"/>
+    <polygon points="0,-22 -5,-4 0,0" fill="#b91c1c"/>
+    <polygon points="0,22 5,4 0,0" fill="#94a3b8"/>
+    <polygon points="0,22 -5,4 0,0" fill="#64748b"/>
+    <polygon points="22,0 4,5 0,0" fill="#94a3b8"/>
+    <polygon points="-22,0 -4,5 0,0" fill="#64748b"/>
+    <text x="0" y="-26" fill="#ef4444" font-size="9" font-weight="900" text-anchor="middle">N</text>
+    <text x="0" y="34" fill="#94a3b8" font-size="8" font-weight="700" text-anchor="middle">S</text>
+    <text x="30" y="3" fill="#94a3b8" font-size="8" font-weight="700" text-anchor="middle">E</text>
+    <text x="-30" y="3" fill="#94a3b8" font-size="8" font-weight="700" text-anchor="middle">W</text>
+  </g>
+</svg>

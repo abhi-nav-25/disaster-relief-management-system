@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   CheckSquare,
@@ -38,15 +38,35 @@ import type {
   TeamStatus,
 } from '../../types/models.types';
 
+type ReliefTeamTab = 'overview' | 'tasks' | 'deliveries';
+
+const getTeamTabFromHash = (hash: string): ReliefTeamTab => {
+  const clean = hash.replace('#', '').toLowerCase();
+  if (clean === 'tasks') return 'tasks';
+  if (clean === 'deliveries') return 'deliveries';
+  return 'overview';
+};
+
 export const ReliefTeamDashboard: React.FC = () => {
   const { user, refreshProfile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Primary team associated with this user
   const primaryTeam = user?.teams && user.teams.length > 0 ? user.teams[0] : null;
 
   // Active Tab: 'overview' | 'tasks' | 'deliveries'
-  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'deliveries'>('overview');
+  const [activeTab, setActiveTab] = useState<ReliefTeamTab>(() => getTeamTabFromHash(location.hash));
+
+  useEffect(() => {
+    setActiveTab(getTeamTabFromHash(location.hash));
+  }, [location.hash]);
+
+  const switchTab = (tab: ReliefTeamTab) => {
+    setActiveTab(tab);
+    const targetHash = tab === 'overview' ? '' : `#${tab}`;
+    navigate(`/dashboard/relief-team${targetHash}`, { replace: true });
+  };
 
   // Core Data States
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -88,14 +108,6 @@ export const ReliefTeamDashboard: React.FC = () => {
   const [deliveryNextStatus, setDeliveryNextStatus] = useState<DeliveryStatus | ''>('');
   const [isSubmittingDeliveryStatus, setIsSubmittingDeliveryStatus] = useState<boolean>(false);
   const [deliveryUpdateError, setDeliveryUpdateError] = useState<string | null>(null);
-
-  // Sync tab with URL hash
-  useEffect(() => {
-    const hash = location.hash.replace('#', '');
-    if (hash === 'tasks' || hash === 'deliveries') {
-      setActiveTab(hash);
-    }
-  }, [location.hash]);
 
   // Auto-dismiss success notification
   useEffect(() => {
@@ -455,11 +467,10 @@ export const ReliefTeamDashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              variant="outline"
+              variant="dark-outline"
               size="md"
               leftIcon={<Activity className="w-4 h-4" />}
               onClick={handleOpenTeamStatusModal}
-              className="bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600"
             >
               Update Team Status
             </Button>
@@ -510,8 +521,8 @@ export const ReliefTeamDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-2 shadow-sm overflow-x-auto">
         <button
-          onClick={() => setActiveTab('overview')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('overview')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'overview'
               ? 'border-amber-600 text-amber-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -521,8 +532,8 @@ export const ReliefTeamDashboard: React.FC = () => {
           Team Overview
         </button>
         <button
-          onClick={() => setActiveTab('tasks')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('tasks')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'tasks'
               ? 'border-amber-600 text-amber-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -532,8 +543,8 @@ export const ReliefTeamDashboard: React.FC = () => {
           My Assigned Tasks ({tasks.length})
         </button>
         <button
-          onClick={() => setActiveTab('deliveries')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('deliveries')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'deliveries'
               ? 'border-amber-600 text-amber-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -610,7 +621,7 @@ export const ReliefTeamDashboard: React.FC = () => {
                 title="Active Assigned Field Tasks"
                 subtitle="High-priority tasks currently assigned to this unit"
                 action={
-                  <Button size="sm" variant="outline" onClick={() => setActiveTab('tasks')}>
+                  <Button size="sm" variant="outline" onClick={() => switchTab('tasks')}>
                     View All ({tasks.length})
                   </Button>
                 }
@@ -670,7 +681,7 @@ export const ReliefTeamDashboard: React.FC = () => {
                 title="Assigned Resource Deliveries"
                 subtitle="Logistics dispatches and relief supply drops"
                 action={
-                  <Button size="sm" variant="outline" onClick={() => setActiveTab('deliveries')}>
+                  <Button size="sm" variant="outline" onClick={() => switchTab('deliveries')}>
                     View All ({deliveries.length})
                   </Button>
                 }

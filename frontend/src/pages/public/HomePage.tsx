@@ -1,10 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldAlert,
   Building2,
   MapPin,
   PhoneCall,
+  Download,
   ArrowRight,
   Truck,
   Users,
@@ -49,6 +50,16 @@ export const HomePage: React.FC = () => {
               <span>Find Nearest Relief Camp</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+
+            <a
+              href="/city-relief-map.svg"
+              download="city-relief-map.svg"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              title="Download Vector City Relief Map (Offline Use)"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download City Map</span>
+            </a>
 
             <Link
               to="/emergency-contacts"

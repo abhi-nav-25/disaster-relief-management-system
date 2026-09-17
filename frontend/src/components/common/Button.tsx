@@ -1,8 +1,8 @@
-﻿import React, { type ButtonHTMLAttributes } from 'react';
+import React, { type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'success';
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'dark-outline' | 'ghost' | 'success';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -40,6 +40,8 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm shadow-emerald-500/20',
     outline:
       'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-blue-500 shadow-xs',
+    'dark-outline':
+      'border border-slate-600 bg-slate-800/90 text-white hover:bg-slate-700 focus:ring-slate-500 shadow-xs',
     ghost:
       'bg-transparent text-slate-700 hover:bg-slate-100 focus:ring-slate-400',
   };
@@ -55,7 +57,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         leftIcon
       )}
-      <span>{children}</span>
+      {children && (typeof children === 'string' || typeof children === 'number' ? <span>{children}</span> : children)}
       {!isLoading && rightIcon}
     </button>
   );

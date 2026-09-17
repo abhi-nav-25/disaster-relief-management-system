@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Building2,
   Users,
@@ -39,12 +39,34 @@ import type {
   TeamStatus,
 } from '../../types/models.types';
 
+type DmaTab = 'overview' | 'camps' | 'resources' | 'teams' | 'audit';
+
+const getDmaTabFromHash = (hash: string): DmaTab => {
+  const clean = hash.replace('#', '').toLowerCase();
+  if (['camps', 'resources', 'teams', 'audit'].includes(clean)) {
+    return clean as DmaTab;
+  }
+  return 'overview';
+};
+
 export const DmaSupervisorDashboard: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Active Tab: 'overview' | 'camps' | 'resources' | 'teams' | 'audit'
-  const [activeTab, setActiveTab] = useState<'overview' | 'camps' | 'resources' | 'teams' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<DmaTab>(() => getDmaTabFromHash(location.hash));
+
+  // Synchronize Tab with URL hash (e.g., #camps, #resources, #teams, #audit, or overview)
+  useEffect(() => {
+    setActiveTab(getDmaTabFromHash(location.hash));
+  }, [location.hash]);
+
+  const switchTab = (tab: DmaTab) => {
+    setActiveTab(tab);
+    const targetHash = tab === 'overview' ? '' : `#${tab}`;
+    navigate(`/dashboard/dma-supervisor${targetHash}`, { replace: true });
+  };
 
   // Core Data States (Fetched strictly from real backend endpoints)
   const [camps, setCamps] = useState<ReliefCamp[]>([]);
@@ -120,14 +142,6 @@ export const DmaSupervisorDashboard: React.FC = () => {
 
   // 4. Audit Log Details Modal
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
-
-  // Synchronize Tab with URL hash (e.g., #camps, #resources, #teams, #audit)
-  useEffect(() => {
-    const hash = location.hash.replace('#', '');
-    if (hash === 'camps' || hash === 'resources' || hash === 'teams' || hash === 'audit') {
-      setActiveTab(hash);
-    }
-  }, [location.hash]);
 
   // Auto-dismiss success notification
   useEffect(() => {
@@ -551,11 +565,10 @@ export const DmaSupervisorDashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              variant="outline"
+              variant="dark-outline"
               size="md"
               leftIcon={<PlusCircle className="w-4 h-4" />}
               onClick={handleOpenCreateResourceModal}
-              className="bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600"
             >
               Add Resource
             </Button>
@@ -615,8 +628,8 @@ export const DmaSupervisorDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-2 shadow-sm overflow-x-auto">
         <button
-          onClick={() => setActiveTab('overview')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('overview')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'overview'
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -626,8 +639,8 @@ export const DmaSupervisorDashboard: React.FC = () => {
           Executive Overview
         </button>
         <button
-          onClick={() => setActiveTab('camps')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('camps')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'camps'
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -637,8 +650,8 @@ export const DmaSupervisorDashboard: React.FC = () => {
           Relief Camps Master ({camps.length})
         </button>
         <button
-          onClick={() => setActiveTab('resources')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('resources')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'resources'
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -648,8 +661,8 @@ export const DmaSupervisorDashboard: React.FC = () => {
           Resource Catalog ({resources.length})
         </button>
         <button
-          onClick={() => setActiveTab('teams')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('teams')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'teams'
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -659,8 +672,8 @@ export const DmaSupervisorDashboard: React.FC = () => {
           Relief Teams ({teams.length})
         </button>
         <button
-          onClick={() => setActiveTab('audit')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          onClick={() => switchTab('audit')}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'audit'
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -680,7 +693,7 @@ export const DmaSupervisorDashboard: React.FC = () => {
               title="Official Relief Shelters"
               subtitle="Master camp registry with capacity and coordinates"
               action={
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('camps')}>
+                <Button size="sm" variant="outline" onClick={() => switchTab('camps')}>
                   View All ({camps.length})
                 </Button>
               }
@@ -765,7 +778,7 @@ export const DmaSupervisorDashboard: React.FC = () => {
               title="Master Relief Commodities"
               subtitle="Standard supply definitions approved for relief delivery"
               action={
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('resources')}>
+                <Button size="sm" variant="outline" onClick={() => switchTab('resources')}>
                   Manage Catalog ({resources.length})
                 </Button>
               }
@@ -816,7 +829,7 @@ export const DmaSupervisorDashboard: React.FC = () => {
               title="Recent Audit Events"
               subtitle="Latest system modifications and operator actions"
               action={
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('audit')}>
+                <Button size="sm" variant="outline" onClick={() => switchTab('audit')}>
                   View Full Audit Log
                 </Button>
               }

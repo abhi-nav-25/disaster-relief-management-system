@@ -14,7 +14,6 @@ import { HomePage } from '../pages/public/HomePage';
 import { PublicCampsPage } from '../pages/public/PublicCampsPage';
 import { NearestCampsPage } from '../pages/public/NearestCampsPage';
 import { EmergencyContactsPage } from '../pages/public/EmergencyContactsPage';
-import { PublicResourcesPage } from '../pages/public/PublicResourcesPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -37,18 +36,30 @@ const DashboardRedirector: React.FC = () => {
   return <Navigate to={getRoleDashboardPath(user.role)} replace />;
 };
 
+// Adaptive Layout: Uses DashboardLayout when authenticated, PublicLayout when guest
+const AdaptiveLayout: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  if (isAuthenticated && user) {
+    return <DashboardLayout />;
+  }
+  return <PublicLayout />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Pages */}
+      {/* Strict Public Only Pages */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+
+      {/* Shared Public & Authenticated Pages (Adaptive Layout) */}
+      <Route element={<AdaptiveLayout />}>
         <Route path="/camps" element={<PublicCampsPage />} />
         <Route path="/camps/nearest" element={<NearestCampsPage />} />
         <Route path="/emergency-contacts" element={<EmergencyContactsPage />} />
-        <Route path="/resources" element={<PublicResourcesPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
       </Route>
 
       {/* Authenticated Role Dashboards */}

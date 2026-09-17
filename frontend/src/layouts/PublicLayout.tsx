@@ -1,11 +1,10 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   ShieldAlert,
   PhoneCall,
   MapPin,
   Building2,
-  Package,
   LogIn,
   LayoutDashboard,
   Menu,
@@ -24,7 +23,6 @@ export const PublicLayout: React.FC = () => {
     { label: 'Relief Camps', path: '/camps', icon: Building2 },
     { label: 'Find Nearest Camp', path: '/camps/nearest', icon: MapPin },
     { label: 'Emergency Helplines', path: '/emergency-contacts', icon: PhoneCall },
-    { label: 'Relief Catalog', path: '/resources', icon: Package },
   ];
 
   return (
@@ -208,7 +206,7 @@ export const PublicLayout: React.FC = () => {
                 <li><Link to="/camps" className="hover:text-white transition-colors">Relief Camps Directory</Link></li>
                 <li><Link to="/camps/nearest" className="hover:text-white transition-colors">Find Nearest Camp</Link></li>
                 <li><Link to="/emergency-contacts" className="hover:text-white transition-colors">Emergency Helplines</Link></li>
-                <li><Link to="/resources" className="hover:text-white transition-colors">Relief Resources Catalog</Link></li>
+                <li><a href="/city-relief-map.svg" download="city-relief-map.svg" className="hover:text-white transition-colors">Download City Map</a></li>
               </ul>
             </div>
             <div>

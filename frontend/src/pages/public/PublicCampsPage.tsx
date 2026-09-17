@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
-import { Building2, Search, MapPin, Users, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Building2, Search, MapPin, Users, AlertCircle, RefreshCw, Download } from 'lucide-react';
 import { campService } from '../../services/camp.service';
 import type { ReliefCamp } from '../../types/models.types';
 import { Card } from '../../components/common/Card';
@@ -59,13 +59,25 @@ export const PublicCampsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={fetchCamps}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 shadow-xs cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh Data</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/city-relief-map.svg"
+            download="city-relief-map.svg"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 shadow-xs cursor-pointer"
+            title="Download City Map (Offline SVG)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download City Map</span>
+          </a>
+
+          <button
+            onClick={fetchCamps}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 shadow-xs cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Search & Filters */}

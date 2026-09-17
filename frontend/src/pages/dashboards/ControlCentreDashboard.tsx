@@ -248,21 +248,50 @@ export const ControlCentreDashboard: React.FC = () => {
 
   // 3. Duplicate Detection & Review
   const handleRunDuplicateDetection = async (requestId: number) => {
+    if (isDetectingDuplicates) return;
     setIsDetectingDuplicates(true);
     setActiveDuplicateRequestId(requestId);
     try {
+      // 1. Check if duplicate checks already exist for this request
+      const existingChecks = await duplicateCheckService.getChecksForRequest(requestId);
+      if (existingChecks && existingChecks.length > 0) {
+        setDuplicateChecks(existingChecks);
+        setSuccessToast(`Existing duplicate check records loaded for Request #${requestId} (${existingChecks.length} record(s)).`);
+        switchTab('duplicates');
+        return;
+      }
+
+      // 2. If no checks exist yet, trigger heuristic detection
       const checks = await duplicateCheckService.detectDuplicates(requestId);
       setDuplicateChecks(checks);
-      setSuccessToast(`Duplicate detection executed for Request #${requestId} (${checks.length} checks found).`);
+      setSuccessToast(`Duplicate detection executed for Request #${requestId} (${checks.length} check(s) found).`);
       switchTab('duplicates');
     } catch (err: any) {
-      setGlobalError(err.response?.data?.message || 'Failed to run duplicate detection.');
+      const msg = err.response?.data?.message || err.message || '';
+      if (
+        msg.includes('Unique constraint') ||
+        msg.includes('RequestDuplicateCheck') ||
+        err.response?.status === 400 ||
+        err.response?.status === 409
+      ) {
+        try {
+          const fallbackChecks = await duplicateCheckService.getChecksForRequest(requestId);
+          setDuplicateChecks(fallbackChecks);
+          setSuccessToast(`Duplicate check already recorded for Request #${requestId}. Loaded existing record(s).`);
+          switchTab('duplicates');
+          return;
+        } catch {
+          // fallback failed, proceed to error display
+        }
+      }
+      setGlobalError(msg || 'Failed to run duplicate detection.');
     } finally {
       setIsDetectingDuplicates(false);
     }
   };
 
   const handleFetchDuplicateChecks = async (requestId: number) => {
+    if (isDetectingDuplicates) return;
     setActiveDuplicateRequestId(requestId);
     setIsDetectingDuplicates(true);
     try {
@@ -885,8 +914,13 @@ export const ControlCentreDashboard: React.FC = () => {
 
                             <button
                               onClick={() => handleRunDuplicateDetection(req.id)}
-                              className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 transition-colors cursor-pointer"
-                              title="Run Duplicate Detection"
+                              disabled={isDetectingDuplicates}
+                              className={`p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 transition-colors cursor-pointer ${
+                                isDetectingDuplicates && activeDuplicateRequestId === req.id
+                                  ? 'opacity-50 cursor-not-allowed animate-pulse'
+                                  : ''
+                              }`}
+                              title="Run / View Duplicate Detection"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
                             </button>

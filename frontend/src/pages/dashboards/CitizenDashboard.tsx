@@ -4,7 +4,8 @@ import {
   Building2,
   MapPin,
   PhoneCall,
-  Package,
+  Download,
+  Map,
   ArrowRight,
   ShieldCheck,
   Navigation,
@@ -21,8 +22,7 @@ import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { campService } from '../../services/camp.service';
 import { emergencyService } from '../../services/emergency.service';
-import { resourceService } from '../../services/resource.service';
-import type { ReliefCamp, EmergencyContact, Resource } from '../../types/models.types';
+import type { ReliefCamp, EmergencyContact } from '../../types/models.types';
 import { getCampStatusColor } from '../../utils/formatters';
 
 export const CitizenDashboard: React.FC = () => {
@@ -30,7 +30,6 @@ export const CitizenDashboard: React.FC = () => {
 
   const [camps, setCamps] = useState<ReliefCamp[]>([]);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,14 +45,12 @@ export const CitizenDashboard: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [campsData, contactsData, resourcesData] = await Promise.all([
+      const [campsData, contactsData] = await Promise.all([
         campService.getAllCamps(),
         emergencyService.getEmergencyContacts().catch(() => []),
-        resourceService.getAllResources().catch(() => []),
       ]);
       setCamps(campsData);
       setContacts(contactsData);
-      setResources(resourcesData);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load relief network data.');
     } finally {
@@ -147,6 +144,15 @@ export const CitizenDashboard: React.FC = () => {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Sync Data</span>
             </button>
+            <a
+              href="/city-relief-map.svg"
+              download="city-relief-map.svg"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+              title="Download City Relief Map (Offline SVG)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download City Map</span>
+            </a>
             <Link
               to="/camps/nearest"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-slate-900 font-semibold text-xs hover:bg-slate-100 shadow-sm transition-colors"
@@ -193,11 +199,11 @@ export const CitizenDashboard: React.FC = () => {
           description="Medical, rescue, police hotlines"
         />
         <StatCard
-          title="Relief Supply Catalog"
-          value={isLoading ? 'Loading...' : `${resources.length} Commodities`}
-          icon={Package}
+          title="Offline Evacuation Map"
+          value="Ready Offline"
+          icon={Map}
           colorScheme="emerald"
-          description="Standard relief resources catalogued"
+          description="Vector city relief & shelter grid"
         />
       </div>
 
@@ -427,12 +433,21 @@ export const CitizenDashboard: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">
                 National Emergency
               </span>
-              <h4 className="text-xl font-extrabold text-rose-900 mt-0.5">112</h4>
+              <div className="mt-0.5">
+                <a
+                  href="tel:112"
+                  aria-label="Call National Emergency 112"
+                  className="text-xl font-extrabold text-rose-900 hover:text-rose-700 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
+                >
+                  112
+                </a>
+              </div>
               <p className="text-[11px] text-rose-600">Police / Ambulance / Fire</p>
             </div>
             <a
               href="tel:112"
-              className="p-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors"
+              aria-label="Call National Emergency 112"
+              className="p-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
               title="Call 112"
             >
               <PhoneCall className="w-4 h-4" />
@@ -444,12 +459,21 @@ export const CitizenDashboard: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
                 Disaster Control Room
               </span>
-              <h4 className="text-xl font-extrabold text-amber-900 mt-0.5">1077</h4>
+              <div className="mt-0.5">
+                <a
+                  href="tel:1077"
+                  aria-label="Call Disaster Control Room 1077"
+                  className="text-xl font-extrabold text-amber-900 hover:text-amber-700 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+                >
+                  1077
+                </a>
+              </div>
               <p className="text-[11px] text-amber-600">Disaster Management Helpline</p>
             </div>
             <a
               href="tel:1077"
-              className="p-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+              aria-label="Call Disaster Control Room 1077"
+              className="p-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               title="Call 1077"
             >
               <PhoneCall className="w-4 h-4" />
@@ -461,12 +485,21 @@ export const CitizenDashboard: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
                 Ambulance Emergency
               </span>
-              <h4 className="text-xl font-extrabold text-blue-900 mt-0.5">108</h4>
+              <div className="mt-0.5">
+                <a
+                  href="tel:108"
+                  aria-label="Call Ambulance Emergency 108"
+                  className="text-xl font-extrabold text-blue-900 hover:text-blue-700 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                >
+                  108
+                </a>
+              </div>
               <p className="text-[11px] text-blue-600">Emergency Medical Service</p>
             </div>
             <a
               href="tel:108"
-              className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              aria-label="Call Ambulance Emergency 108"
+              className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               title="Call 108"
             >
               <PhoneCall className="w-4 h-4" />
@@ -511,21 +544,22 @@ export const CitizenDashboard: React.FC = () => {
           </Link>
         </Card>
 
-        <Card className="hover:border-indigo-300 transition-all hover:shadow-md">
-          <div className="p-3 w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-            <Package className="w-5 h-5" />
+        <Card className="hover:border-emerald-300 transition-all hover:shadow-md">
+          <div className="p-3 w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+            <Download className="w-5 h-5" />
           </div>
-          <h4 className="font-bold text-slate-900 text-base mb-1">Relief Supply Catalog</h4>
+          <h4 className="font-bold text-slate-900 text-base mb-1">Offline City Relief Map</h4>
           <p className="text-xs text-slate-500 mb-4">
-            Browse standard relief commodities, ration packages, medical supplies, and aid kits.
+            Download the official vector relief grid and shelter evacuation map for offline use during power or network outages.
           </p>
-          <Link
-            to="/resources"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+          <a
+            href="/city-relief-map.svg"
+            download="city-relief-map.svg"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer"
           >
-            <span>View Supplies ({resources.length})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+            <span>Download City Map</span>
+            <Download className="w-3.5 h-3.5" />
+          </a>
         </Card>
       </div>
     </div>

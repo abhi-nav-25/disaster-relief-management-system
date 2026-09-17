@@ -44,7 +44,6 @@ export const DashboardLayout: React.FC = () => {
           { label: 'Relief Camps', path: '/camps', icon: Building2 },
           { label: 'Find Nearest Camp', path: '/camps/nearest', icon: MapPin },
           { label: 'Emergency Helplines', path: '/emergency-contacts', icon: PhoneCall },
-          { label: 'Relief Resources', path: '/resources', icon: Package },
         ];
       case 'RELIEF_CAMP_MANAGER':
         return [
@@ -162,10 +161,11 @@ export const DashboardLayout: React.FC = () => {
           </div>
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              location.pathname === item.path ||
-              (item.path.includes('#') &&
-                location.pathname + location.hash === item.path);
+            const currentFullPath = location.pathname + (location.hash || '');
+            const isActive = item.path.includes('#')
+              ? currentFullPath === item.path
+              : location.pathname === item.path &&
+                (!location.hash || location.hash === '' || location.hash === '#overview');
             return (
               <Link
                 key={item.label}
