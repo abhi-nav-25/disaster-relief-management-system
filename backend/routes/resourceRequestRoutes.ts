@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
     createRequest,
+    createOnBehalfRequest,
     getOneRequest,
     getMyCampRequests,
     getRequests,
@@ -30,6 +31,13 @@ router.get(
 );
 
 // Control Centre
+router.post(
+    "/on-behalf",
+    authenticate,
+    authorize("CONTROL_CENTRE_OPERATOR"),
+    createOnBehalfRequest
+);
+
 router.get(
     "/",
     authenticate,

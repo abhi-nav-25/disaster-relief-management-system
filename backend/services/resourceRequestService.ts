@@ -2,6 +2,7 @@ import prisma from "../config/prisma";
 import {
     RequestChannel,
     Priority,
+    AuditAction,
 } from "@prisma/client";
 import { logAction } from "./auditLogService";
 import {
@@ -12,6 +13,154 @@ import {
     verifyResourceRequest,
     updateRequestPriority,
 } from "../repositories/resourceRequestRepository";
+
+export const createOnBehalfResourceRequest = async (
+    operatorId: number,
+    data: {
+        campId: number;
+        channel: RequestChannel;
+        description: string;
+        priority?: Priority;
+        items: {
+            resourceId: number;
+            quantity: number;
+            notes?: string;
+        }[];
+    }
+) => {
+    const operator = await prisma.user.findUnique({
+        where: {
+            id: operatorId,
+        },
+        select: {
+            role: true,
+            name: true,
+        },
+    });
+
+    if (!operator) {
+        throw new Error("User not found");
+    }
+
+    if (operator.role !== "CONTROL_CENTRE_OPERATOR") {
+        throw new Error(
+            "Only a Control Centre Operator can create a request on behalf of a camp"
+        );
+    }
+
+    if (!data.campId || !Number.isInteger(data.campId) || data.campId <= 0) {
+        throw new Error("Valid camp ID is required");
+    }
+
+    const camp = await prisma.reliefCamp.findUnique({
+        where: {
+            id: data.campId,
+        },
+        select: {
+            id: true,
+            name: true,
+            officialCode: true,
+        },
+    });
+
+    if (!camp) {
+        throw new Error(`Relief camp with ID ${data.campId} not found`);
+    }
+
+    if (
+        data.channel !== RequestChannel.PHONE &&
+        data.channel !== RequestChannel.SMS
+    ) {
+        throw new Error(
+            "Channel must be either PHONE or SMS for requests created on behalf of a camp"
+        );
+    }
+
+    if (
+        !data.description ||
+        typeof data.description !== "string" ||
+        data.description.trim().length === 0
+    ) {
+        throw new Error("Request description is required");
+    }
+
+    const trimmedDescription = data.description.trim();
+
+    if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+        throw new Error("At least one resource item is required");
+    }
+
+    const resourceIds = data.items.map((item) => item.resourceId);
+    if (new Set(resourceIds).size !== resourceIds.length) {
+        throw new Error("A resource can only appear once in a request");
+    }
+
+    for (const item of data.items) {
+        if (!Number.isInteger(item.resourceId) || item.resourceId <= 0) {
+            throw new Error("Invalid resource ID");
+        }
+
+        if (
+            typeof item.quantity !== "number" ||
+            !Number.isFinite(item.quantity) ||
+            item.quantity <= 0
+        ) {
+            throw new Error("Resource quantity must be greater than zero");
+        }
+
+        const resource = await prisma.resource.findUnique({
+            where: {
+                id: item.resourceId,
+            },
+            select: {
+                id: true,
+                isActive: true,
+            },
+        });
+
+        if (!resource) {
+            throw new Error(`Resource ${item.resourceId} not found`);
+        }
+
+        if (!resource.isActive) {
+            throw new Error(`Resource ${item.resourceId} is inactive`);
+        }
+    }
+
+    const request = await createResourceRequest({
+        campId: camp.id,
+        createdById: operatorId,
+        channel: data.channel,
+        description: trimmedDescription,
+        priority: data.priority || Priority.MEDIUM,
+        items: data.items.map((item) => ({
+            resourceId: item.resourceId,
+            quantity: item.quantity,
+            notes: item.notes?.trim() || undefined,
+        })),
+    });
+
+    try {
+        await logAction({
+            action: AuditAction.CREATE,
+            entityType: "ResourceRequest",
+            entityId: request.id,
+            performedById: operatorId,
+            afterData: {
+                campId: camp.id,
+                campName: camp.name,
+                channel: data.channel,
+                description: trimmedDescription,
+                itemCount: data.items.length,
+            },
+            description: `Resource request created on behalf of ${camp.name} via ${data.channel}.`,
+        });
+    } catch (auditError) {
+        console.error("Failed to write audit log for on-behalf request:", auditError);
+    }
+
+    return request;
+};
 
 export const createCampResourceRequest = async (
     userId: number,

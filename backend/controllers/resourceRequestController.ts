@@ -7,12 +7,61 @@ import {
 
 import {
     createCampResourceRequest,
+    createOnBehalfResourceRequest,
     getRequest,
     getCampRequests,
     getAllRequests,
     verifyRequest,
     setRequestPriority,
 } from "../services/resourceRequestService";
+
+export const createOnBehalfRequest = async (
+    req: AuthenticatedRequest,
+    res: Response
+) => {
+    try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Authentication required",
+            });
+        }
+
+        const {
+            campId,
+            channel,
+            description,
+            priority,
+            items,
+        } = req.body;
+
+        const request = await createOnBehalfResourceRequest(
+            userId,
+            {
+                campId: Number(campId),
+                channel,
+                description,
+                priority,
+                items,
+            }
+        );
+
+        return res.status(201).json({
+            message: `Resource request raised successfully for ${request.camp?.name || "camp"} via ${request.channel}`,
+            request,
+        });
+    } catch (error) {
+        const message =
+            error instanceof Error
+                ? error.message
+                : "Failed to create resource request on behalf of camp";
+
+        return res.status(400).json({
+            message,
+        });
+    }
+};
 
 export const createRequest = async (
     req: AuthenticatedRequest,

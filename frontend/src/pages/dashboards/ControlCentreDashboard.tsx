@@ -12,6 +12,8 @@ import {
   RefreshCw,
   MapPin,
   PlusCircle,
+  Plus,
+  Trash2,
   Eye,
   Check,
   X,
@@ -19,6 +21,7 @@ import {
   Activity,
   ChevronRight,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../../components/common/Card';
@@ -28,6 +31,8 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 // Services
 import { resourceRequestService } from '../../services/resourceRequest.service';
+import { campService } from '../../services/camp.service';
+import { resourceService } from '../../services/resource.service';
 import { duplicateCheckService } from '../../services/duplicateCheck.service';
 import { assignmentService } from '../../services/assignment.service';
 import { teamService } from '../../services/team.service';
@@ -38,6 +43,8 @@ import { auditLogService } from '../../services/auditLog.service';
 // Types
 import type {
   ResourceRequest,
+  ReliefCamp,
+  Resource,
   ReliefTeam,
   ResourceDelivery,
   AuditLog,
@@ -173,6 +180,22 @@ export const ControlCentreDashboard: React.FC = () => {
   const [auditEntityTypeFilter, setAuditEntityTypeFilter] = useState('');
   const [auditEntityIdFilter, setAuditEntityIdFilter] = useState('');
 
+  // Camps & Resources for On-Behalf Requests
+  const [availableCamps, setAvailableCamps] = useState<ReliefCamp[]>([]);
+  const [availableResources, setAvailableResources] = useState<Resource[]>([]);
+
+  // Raise Request on Behalf Modal State
+  const [isRaiseOnBehalfModalOpen, setIsRaiseOnBehalfModalOpen] = useState(false);
+  const [onBehalfCampId, setOnBehalfCampId] = useState<number | string>('');
+  const [onBehalfChannel, setOnBehalfChannel] = useState<'PHONE' | 'SMS'>('PHONE');
+  const [onBehalfDescription, setOnBehalfDescription] = useState('');
+  const [onBehalfPriority, setOnBehalfPriority] = useState<Priority>('MEDIUM');
+  const [onBehalfItems, setOnBehalfItems] = useState<
+    Array<{ resourceId: number | string; quantity: number | string; notes: string }>
+  >([]);
+  const [onBehalfError, setOnBehalfError] = useState<string | null>(null);
+  const [isSubmittingOnBehalf, setIsSubmittingOnBehalf] = useState(false);
+
   // Auto hide toast after 4 seconds
   useEffect(() => {
     if (successToast) {
@@ -186,16 +209,20 @@ export const ControlCentreDashboard: React.FC = () => {
     setIsLoading(true);
     setGlobalError(null);
     try {
-      const [reqs, allTeams, availTeams, logs] = await Promise.all([
+      const [reqs, allTeams, availTeams, logs, camps, resources] = await Promise.all([
         resourceRequestService.getAllRequests().catch(() => []),
         teamService.getAllTeams().catch(() => []),
         assignmentService.getAvailableTeams().catch(() => []),
         auditLogService.getAuditLogs().catch(() => []),
+        campService.getAllCamps().catch(() => []),
+        resourceService.getAllResources().catch(() => []),
       ]);
       setRequests(reqs);
       setTeams(allTeams);
       setAvailableTeams(availTeams);
       setAuditLogs(logs);
+      setAvailableCamps(camps);
+      setAvailableResources(resources);
     } catch (err: any) {
       setGlobalError(err.response?.data?.message || 'Failed to sync central command data.');
     } finally {
@@ -206,6 +233,150 @@ export const ControlCentreDashboard: React.FC = () => {
   useEffect(() => {
     loadAllOperationalData();
   }, []);
+
+  // 0. Raise Request on Behalf of Camp Handlers
+  const handleOpenRaiseOnBehalfModal = async () => {
+    setOnBehalfError(null);
+    setOnBehalfDescription('');
+    setOnBehalfChannel('PHONE');
+    setOnBehalfPriority('MEDIUM');
+
+    let camps = availableCamps;
+    if (camps.length === 0) {
+      try {
+        camps = await campService.getAllCamps();
+        setAvailableCamps(camps);
+      } catch {
+        // ignore
+      }
+    }
+    if (camps.length > 0) {
+      setOnBehalfCampId(camps[0].id);
+    } else {
+      setOnBehalfCampId('');
+    }
+
+    let resList = availableResources;
+    if (resList.length === 0) {
+      try {
+        resList = await resourceService.getAllResources();
+        setAvailableResources(resList);
+      } catch {
+        // ignore
+      }
+    }
+    const activeRes = resList.filter((r) => r.isActive !== false);
+    const firstResId = activeRes.length > 0 ? activeRes[0].id : (resList[0]?.id || 0);
+    setOnBehalfItems([{ resourceId: firstResId, quantity: 1, notes: '' }]);
+    setIsRaiseOnBehalfModalOpen(true);
+  };
+
+  const handleAddOnBehalfItem = () => {
+    const activeRes = availableResources.filter((r) => r.isActive !== false);
+    const unused = activeRes.find(
+      (r) => !onBehalfItems.some((item) => Number(item.resourceId) === r.id)
+    );
+    const nextId = unused ? unused.id : (activeRes[0]?.id || availableResources[0]?.id || 0);
+    setOnBehalfItems((prev) => [...prev, { resourceId: nextId, quantity: 1, notes: '' }]);
+  };
+
+  const handleRemoveOnBehalfItem = (index: number) => {
+    if (onBehalfItems.length <= 1) return;
+    setOnBehalfItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleOnBehalfItemChange = (
+    index: number,
+    field: 'resourceId' | 'quantity' | 'notes',
+    value: any
+  ) => {
+    setOnBehalfItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
+  const handleSubmitOnBehalf = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOnBehalfError(null);
+
+    const campIdNum = Number(onBehalfCampId);
+    if (!campIdNum || campIdNum <= 0) {
+      setOnBehalfError('Please select a valid relief camp.');
+      return;
+    }
+
+    if (onBehalfChannel !== 'PHONE' && onBehalfChannel !== 'SMS') {
+      setOnBehalfError('Please select a valid request channel (Phone or SMS).');
+      return;
+    }
+
+    if (!onBehalfDescription.trim()) {
+      setOnBehalfError('Please provide a description of the request received from the camp.');
+      return;
+    }
+
+    if (onBehalfItems.length === 0) {
+      setOnBehalfError('At least one resource item is required.');
+      return;
+    }
+
+    const resourceIds = onBehalfItems.map((item) => Number(item.resourceId));
+    if (resourceIds.some((id) => !id || id <= 0)) {
+      setOnBehalfError('Please select a valid resource for every requested item.');
+      return;
+    }
+
+    if (new Set(resourceIds).size !== resourceIds.length) {
+      setOnBehalfError(
+        'A resource can only appear once in a request. Please combine duplicate items.'
+      );
+      return;
+    }
+
+    for (const item of onBehalfItems) {
+      const qty = Number(item.quantity);
+      if (isNaN(qty) || qty <= 0) {
+        setOnBehalfError('Every requested item must have a quantity greater than zero.');
+        return;
+      }
+    }
+
+    setIsSubmittingOnBehalf(true);
+    try {
+      const payload = {
+        campId: campIdNum,
+        channel: onBehalfChannel,
+        description: onBehalfDescription.trim(),
+        priority: onBehalfPriority,
+        items: onBehalfItems.map((item) => ({
+          resourceId: Number(item.resourceId),
+          quantity: Number(item.quantity),
+          notes: item.notes.trim() || undefined,
+        })),
+      };
+
+      const created = await resourceRequestService.createOnBehalfRequest(payload);
+      const campName =
+        created.camp?.name ||
+        availableCamps.find((c) => c.id === campIdNum)?.name ||
+        `Camp #${campIdNum}`;
+      setSuccessToast(
+        `Resource request raised successfully for ${campName} via ${onBehalfChannel}.`
+      );
+      setIsRaiseOnBehalfModalOpen(false);
+      loadAllOperationalData();
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to create resource request on behalf of camp.';
+      setOnBehalfError(msg);
+    } finally {
+      setIsSubmittingOnBehalf(false);
+    }
+  };
 
   // 1. Verify / Reject Request Handler
   const handleVerifyRequest = async (
@@ -726,6 +897,28 @@ export const ControlCentreDashboard: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'requests' && (
         <div className="space-y-4">
+          {/* Header Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-indigo-600" />
+                <span>Resource Requests Operations</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Monitor incoming demand, verify legitimacy, and digitize offline requests received from isolated relief camps.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenRaiseOnBehalfModal}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>Raise Request on Behalf of Camp</span>
+            </Button>
+          </div>
+
           {/* Search & Filter Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="lg:col-span-2 relative">
@@ -813,8 +1006,21 @@ export const ControlCentreDashboard: React.FC = () => {
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {filteredRequests.map((req) => (
                       <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">
-                          #{req.id}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="font-bold text-indigo-600">#{req.id}</div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border mt-0.5 ${
+                              req.channel === 'PHONE'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : req.channel === 'SMS'
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {req.channel === 'PHONE' && <PhoneCall className="w-2.5 h-2.5" />}
+                            {req.channel === 'SMS' && <MessageSquare className="w-2.5 h-2.5" />}
+                            {req.channel}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-slate-900">{req.camp?.name || `Camp #${req.campId}`}</div>
@@ -2090,6 +2296,304 @@ export const ControlCentreDashboard: React.FC = () => {
                   className="text-xs bg-emerald-600 hover:bg-emerald-700"
                 >
                   Confirm & Dispatch Delivery
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 6: RAISE REQUEST ON BEHALF OF CAMP */}
+      {/* ========================================================================= */}
+      {isRaiseOnBehalfModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-100 text-indigo-700">
+                  <PhoneCall className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                    Control Centre Operations
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Raise Request on Behalf of Camp
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isSubmittingOnBehalf) setIsRaiseOnBehalfModalOpen(false);
+                }}
+                disabled={isSubmittingOnBehalf}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Digitize urgent relief supply requests received offline from isolated camps via{' '}
+              <strong>Phone</strong> or <strong>SMS</strong>. The digitized request will enter the
+              standard verification and dispatch pipeline.
+            </p>
+
+            {onBehalfError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{onBehalfError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitOnBehalf} className="space-y-4 text-xs">
+              {/* 1. Relief Camp Selection */}
+              <div>
+                <label className="block font-semibold text-slate-700 uppercase text-[11px] mb-1">
+                  1. Target Relief Camp <span className="text-rose-500">*</span>
+                </label>
+                {availableCamps.length === 0 ? (
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                    No relief camps available in the system.
+                  </div>
+                ) : (
+                  <select
+                    value={onBehalfCampId}
+                    onChange={(e) => setOnBehalfCampId(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold cursor-pointer"
+                    required
+                  >
+                    <option value="">Select a relief camp...</option>
+                    {availableCamps.map((camp) => (
+                      <option key={camp.id} value={camp.id}>
+                        {camp.name} ({camp.officialCode}) — {camp.address}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* 2. Channel Selection */}
+              <div>
+                <label className="block font-semibold text-slate-700 uppercase text-[11px] mb-1.5">
+                  2. Ingestion Channel <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOnBehalfChannel('PHONE')}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all text-left cursor-pointer ${
+                      onBehalfChannel === 'PHONE'
+                        ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`p-2 rounded-lg ${
+                        onBehalfChannel === 'PHONE'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <PhoneCall className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs">Phone Call</div>
+                      <div className="text-[10px] text-slate-500">
+                        Verbal request via emergency hotline
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setOnBehalfChannel('SMS')}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all text-left cursor-pointer ${
+                      onBehalfChannel === 'SMS'
+                        ? 'border-purple-600 bg-purple-50/70 text-purple-900 ring-2 ring-purple-500/20 shadow-xs'
+                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`p-2 rounded-lg ${
+                        onBehalfChannel === 'SMS'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs">SMS Message</div>
+                      <div className="text-[10px] text-slate-500">
+                        Text dispatch via emergency SMS
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Description */}
+              <div>
+                <label className="block font-semibold text-slate-700 uppercase text-[11px] mb-1">
+                  3. Requirement Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  value={onBehalfDescription}
+                  onChange={(e) => setOnBehalfDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Describe the requirement received from the camp (e.g., Emergency drinking water requested by camp manager over phone due to main supply outage)..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              {/* 4. Initial Priority */}
+              <div>
+                <label className="block font-semibold text-slate-700 uppercase text-[11px] mb-1">
+                  4. Initial Priority
+                </label>
+                <select
+                  value={onBehalfPriority}
+                  onChange={(e) => setOnBehalfPriority(e.target.value as Priority)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold cursor-pointer"
+                >
+                  <option value="LOW">LOW — Routine replenishment</option>
+                  <option value="MEDIUM">MEDIUM — Normal priority operational need</option>
+                  <option value="HIGH">HIGH — Critical stock shortage</option>
+                  <option value="CRITICAL">CRITICAL — Immediate life-safety emergency</option>
+                </select>
+              </div>
+
+              {/* 5. Requested Resources */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700 uppercase text-[11px]">
+                    5. Requested Commodities <span className="text-rose-500">*</span>
+                  </label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAddOnBehalfItem}
+                    className="text-[11px] text-indigo-700 hover:bg-indigo-50 border-indigo-200 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Resource Item</span>
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {onBehalfItems.map((item, index) => {
+                    const selectedRes = availableResources.find(
+                      (r) => r.id === Number(item.resourceId)
+                    );
+                    return (
+                      <div
+                        key={index}
+                        className="p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
+                      >
+                        <div className="sm:col-span-5">
+                          <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-1">
+                            Resource #{index + 1}
+                          </label>
+                          <select
+                            value={item.resourceId}
+                            onChange={(e) =>
+                              handleOnBehalfItemChange(index, 'resourceId', Number(e.target.value))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-medium cursor-pointer"
+                            required
+                          >
+                            <option value="">Select Resource...</option>
+                            {availableResources
+                              .filter((r) => r.isActive !== false)
+                              .map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.name} ({r.unit})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-3">
+                          <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-1">
+                            Quantity {selectedRes ? `(${selectedRes.unit})` : ''}
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleOnBehalfItemChange(index, 'quantity', e.target.value)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold"
+                            placeholder="Qty"
+                            required
+                          />
+                        </div>
+
+                        <div className="sm:col-span-3">
+                          <label className="block text-[10px] font-semibold text-slate-600 uppercase mb-1">
+                            Notes (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={item.notes}
+                            onChange={(e) =>
+                              handleOnBehalfItemChange(index, 'notes', e.target.value)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                            placeholder="e.g. 20L containers"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOnBehalfItem(index)}
+                            disabled={onBehalfItems.length <= 1}
+                            className={`p-2 rounded-lg border transition-colors ${
+                              onBehalfItems.length <= 1
+                                ? 'border-slate-200 text-slate-300 cursor-not-allowed'
+                                : 'border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer'
+                            }`}
+                            title="Remove item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Form Footer */}
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isSubmittingOnBehalf}
+                  onClick={() => setIsRaiseOnBehalfModalOpen(false)}
+                  className="text-xs cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  isLoading={isSubmittingOnBehalf}
+                  disabled={isSubmittingOnBehalf || availableCamps.length === 0}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-700 font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Submit Request on Behalf of Camp</span>
                 </Button>
               </div>
             </form>

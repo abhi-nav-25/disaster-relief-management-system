@@ -1,4 +1,4 @@
-﻿import api from './api';
+import api from './api';
 import type {
   ResourceRequest,
   RequestVerificationStatus,
@@ -9,6 +9,18 @@ import type {
 export interface CreateResourceRequestPayload {
   channel: RequestChannel;
   description?: string;
+  items: {
+    resourceId: number;
+    quantity: number;
+    notes?: string;
+  }[];
+}
+
+export interface CreateOnBehalfRequestPayload {
+  campId: number;
+  channel: 'PHONE' | 'SMS';
+  description: string;
+  priority?: Priority;
   items: {
     resourceId: number;
     quantity: number;
@@ -35,6 +47,14 @@ export const resourceRequestService = {
   async createRequest(payload: CreateResourceRequestPayload): Promise<ResourceRequest> {
     const response = await api.post<{ message: string; request: ResourceRequest }>(
       '/resource-requests',
+      payload
+    );
+    return response.data.request;
+  },
+
+  async createOnBehalfRequest(payload: CreateOnBehalfRequestPayload): Promise<ResourceRequest> {
+    const response = await api.post<{ message: string; request: ResourceRequest }>(
+      '/resource-requests/on-behalf',
       payload
     );
     return response.data.request;
